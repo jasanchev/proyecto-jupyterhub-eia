@@ -1,5 +1,5 @@
 
-# Propuesta Técnica - Plataforma educativa y de investigación JupyterHub en la nube
+# Propuesta Técnica - Plataforma JupyterHub para docencia e investigación – Universidad EIA
 
 **Universidad EIA**  
 **Fecha:** 31 de julio de 2025  
@@ -170,6 +170,7 @@ Correo: jaime.sanchez@eia.edu.co
 Directora de Investigación, Desarrollo e Innovación  
 Universidad EIA  
 Correo: adriana.quinchia@eia.edu.co  
+
 
 
 
