@@ -1,4 +1,5 @@
-# Propuesta Técnica - Plataforma educativa JupyterHub en la nube
+
+# Propuesta Técnica - Plataforma educativa y de investigación JupyterHub en la nube
 
 **Universidad EIA**  
 **Fecha:** 31 de julio de 2025  
@@ -84,8 +85,20 @@ El proyecto se desarrollará en cuatro fases:
 
 ## 9. VALOR Y FORMA DE FINANCIACIÓN
 
-El proyecto utilizará los créditos otorgados por Google Cloud Research Credits (USD $5000) para cubrir el 100% de los costos asociados a infraestructura (instancias, almacenamiento, tráfico de red, IAM, monitoreo).  
-No se contemplan pagos adicionales. El soporte técnico y académico será asumido por el equipo interno de la Universidad EIA.
+El valor de la propuesta incluye el uso de créditos por **USD $5,000** otorgados por **Google Cloud Research Credits**, con los cuales se implementará una arquitectura sostenible que garantice el funcionamiento continuo de JupyterHub durante 12 meses.
+
+La solución contempla el despliegue sobre **Google Kubernetes Engine (GKE)** bajo un esquema de recursos optimizados, incluyendo autenticación web, almacenamiento persistente por usuario y entornos de programación en **Python**, **R** y **Julia**.
+
+### Forma de uso y asignación de recursos
+
+- Hasta **50 usuarios activos simultáneamente**, más de 100 usuarios registrados.
+- Entornos personalizados por curso con bibliotecas científicas y de análisis de datos.
+- Almacenamiento individual de hasta **10 GB por usuario** en Cloud Storage.
+- Uso de CPU por defecto, con posibilidad de acceso a GPU bajo demanda para proyectos docentes o de investigación.
+- Acceso web seguro con autenticación mediante `FirstUseAuthenticator` o `NativeAuthenticator`.
+- Infraestructura **autoescalable** para balancear el uso y controlar los costos.
+
+> **Nota técnica:** Se prioriza la sostenibilidad del entorno con recursos compartidos, limitando el uso intensivo de cómputo para deep learning o simulaciones pesadas. El entorno es ideal para cursos de programación, análisis de datos, estadística, optimización y simulación.
 
 ---
 
@@ -97,7 +110,56 @@ No se contemplan pagos adicionales. El soporte técnico y académico será asumi
 
 ---
 
-## 11. INFORMACIÓN DE CONTACTO
+## 11. PLAN DE SEGUIMIENTO Y JUSTIFICACIÓN PARA SOLICITUD DE AMPLIACIÓN DE CRÉDITOS
+
+**Nombre del proyecto:** Plataforma JupyterHub para docencia e investigación – Universidad EIA  
+**ID del proyecto en GCP:** _[coloca aquí tu ID del proyecto]_  
+**Duración estimada:** 12 meses  
+**Solicitante:** Jaime Sánchez Velásquez – Profesor investigador, Escuela de Ingeniería y Ciencias Básicas, Universidad EIA
+
+### Objetivo del seguimiento
+
+Establecer mecanismos de monitoreo y evaluación del uso de la infraestructura en Google Cloud para garantizar:
+- Uso responsable y eficiente de los créditos
+- Evidencia del impacto educativo y científico
+- Base sólida para solicitar una extensión de créditos si es necesario
+
+### Indicadores clave de seguimiento (KPI)
+
+| Indicador                       | Frecuencia         | Fuente/Herramienta               |
+|--------------------------------|--------------------|----------------------------------|
+| Créditos consumidos            | Semanal            | Google Cloud Billing Dashboard   |
+| Usuarios registrados           | Mensual            | Dashboard de JupyterHub          |
+| Usuarios simultáneos           | Semanal            | Logs / métricas de GKE           |
+| Cursos integrados              | Trimestral         | Coordinación académica           |
+| Tiempo promedio de sesión      | Mensual            | Logs de uso                      |
+| Uso de GPU                     | Bajo demanda       | Métricas de facturación          |
+| Actividades investigativas     | Trimestral         | Reportes de proyectos            |
+
+### Plan de informes de avance
+
+- **Mes 3:** Informe interno de consumo y pruebas piloto  
+- **Mes 6:** Informe de impacto con métricas clave  
+- **Mes 6–7:** Envío de solicitud de ampliación si es necesario  
+- **Mes 12:** Informe final técnico y académico  
+
+### Justificación para ampliación de créditos
+
+Se solicitará ampliación si:
+- Aumenta la demanda institucional
+- Se requiere mayor capacidad de cómputo para investigación
+- Se logran resultados destacados en la implementación inicial
+
+### Documentos para soporte
+
+- Reportes de uso de créditos y recursos  
+- Notebooks ejecutados por docentes y estudiantes  
+- Evidencia de impacto académico y de investigación  
+- Plan de uso para nuevos créditos  
+
+---
+
+## 12. INFORMACIÓN DE CONTACTO
 
 **Jaime Alberto Sánchez Velásquez**  
 Docente – Escuela de Ingeniería y Ciencias Básicas  
@@ -107,5 +169,7 @@ Correo: jaime.sanchez@eia.edu.co
 **Adriana M. Quinchía Figueroa**  
 Directora de Investigación, Desarrollo e Innovación  
 Universidad EIA  
-Correo: adriana.quinchia@eia.edu.co
+Correo: adriana.quinchia@eia.edu.co  
+
+
 
