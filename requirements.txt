@@ -1,0 +1,4 @@
+jupyterhub
+notebook
+mkdocs
+mkdocs-material

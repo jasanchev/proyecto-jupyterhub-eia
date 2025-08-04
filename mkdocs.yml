@@ -1,0 +1,10 @@
+site_name: Plataforma JupyterHub EIA
+theme:
+  name: material
+nav:
+  - Inicio: index.md
+  - Propuesta: propuesta.md
+  - Infraestructura: infraestructura.md
+  - Cronograma: cronograma.md
+  - Equipo: equipo.md
+  - Contacto: contacto.md
