@@ -1,2 +1,2 @@
 # proyecto-jupyterhub-eia
-Proyecto educativo y de investigación para desplegar JupyterHub en la nube con acceso a notebooks en Python, R y Julia. Diseñado para fortalecer cursos, semilleros y actividades de análisis de datos en la Facultad de Ingeniería y Ciencias Básicas de la Universidad EIA.
+Despliegue de JupyterHub en Google Cloud como plataforma educativa y de investigación para la Universidad EIA. Soporta Python, R y Julia en cursos, semilleros y proyectos de análisis y simulación en la Facultad de Ingeniería y Ciencias Básicas.
