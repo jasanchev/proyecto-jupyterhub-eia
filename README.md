@@ -1,8 +1,17 @@
 # Plataforma Educativa y de Investigación JupyterHub - Universidad EIA
 
-Este repositorio contiene la documentación técnica y operativa para el despliegue de una **plataforma educativa y de investigación en la nube basada en JupyterHub**, orientada al fortalecimiento de los procesos de enseñanza, aprendizaje y desarrollo de proyectos en la Facultad de Ingeniería y Ciencias Básicas de la Universidad EIA.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Google Cloud Research Credits](https://img.shields.io/badge/Google%20Cloud-Research%20Credits-orange)](https://cloud.google.com/edu/research)
 
-Implementada sobre Google Cloud con el respaldo del programa **Google Cloud Research Credits**, esta infraestructura busca brindar acceso escalable, equitativo y reproducible a entornos computacionales interactivos en Python, R y Julia para estudiantes, docentes e investigadores.
+Este repositorio contiene la documentación técnica y operativa para el despliegue de una 
+**plataforma educativa y de investigación en la nube basada en JupyterHub**, orientada al 
+fortalecimiento de los procesos de enseñanza, aprendizaje y desarrollo de proyectos en la 
+Facultad de Ingeniería y Ciencias Básicas de la Universidad EIA.
+
+Implementada sobre Google Cloud con el respaldo del programa 
+**Google Cloud Research Credits (USD $5000)**, esta infraestructura busca brindar acceso 
+escalable, equitativo y reproducible a entornos computacionales interactivos en Python, R y Julia 
+para estudiantes, docentes e investigadores.
 
 ---
 
@@ -66,7 +75,9 @@ Contiene una versión navegable de toda la documentación.
 
 ## 👥 Equipo del proyecto
 
-- Jaime Alberto Sánchez Velásquez – Coordinador técnico y académico  
+- Jaime Alberto Sánchez Velásquez – Coordinador técnico y académico
+- Juan Sebastián Valencia Villa – Coordinador técnico y académico
+- Duvan Alberto Gómez Betancur – Coordinador técnico y académico  
 - Adriana M. Quinchía Figueroa – Dirección de Investigación, Desarrollo e Innovación
 
 ---
@@ -75,14 +86,18 @@ Contiene una versión navegable de toda la documentación.
 
 Si deseas conocer más sobre esta iniciativa o replicarla en tu institución, puedes escribir a:
 
-📧 jaime.sanchez@eia.edu.co  
+📧 jaime.sanchez@eia.edu.co
+📧 juan.valencia72@eia.edu.co
+📧 duvan.gomez36@eia.edu.co
 📧 adriana.quinchia@eia.edu.co
 
 ---
 
-## 🧠 Licencia
+## 🧠 Licencia y uso de créditos
 
 Este repositorio se publica bajo licencia MIT. Eres libre de reutilizar, adaptar o extender este proyecto, citando la fuente original.
+
+El proyecto cuenta con el apoyo de **Google Cloud Research Credits (USD $5000)**, otorgados directamente a la Universidad EIA. El uso de estos créditos está sujeto a los términos de servicio de Google Cloud Platform y a las condiciones del programa Google Cloud Research Credits, los cuales establecen que los recursos se destinan exclusivamente a actividades de investigación y docencia.
 
 ---
 
