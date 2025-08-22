@@ -148,24 +148,25 @@ El proyecto se desarrollará en cuatro fases:
 
 ```mermaid
 gantt
-    title Cronograma del proyecto JupyterHub (12 meses)
+    title Cronograma JupyterHub (12 meses)
     dateFormat  YYYY-MM-DD
     axisFormat  %b %Y
 
     section Fases
-    Fase 1 · Instalación y pruebas iniciales (1 mes)     :a1, 2025-09-01, 4w
-    Fase 2 · Piloto con docentes y estudiantes (2 meses) :a2, after a1, 8w
-    Fase 3 · Integración en cursos (4 meses)             :a3, after a2, 16w
-    Fase 4 · Escalamiento, extensión y monitoreo (5 m)   :a4, after a3, 20w
+    Fase 1 - Instalacion y pruebas (1 mes)        :a1, 2025-09-01, 28d
+    Fase 2 - Piloto docentes y estudiantes (2 m)  :a2, after a1, 56d
+    Fase 3 - Integracion en cursos (4 m)          :a3, after a2, 112d
+    Fase 4 - Escalamiento y monitoreo (5 m)       :a4, after a3, 140d
 
-    section Entregables (hitos)
-    Infraestructura operativa (Mes 1)                          :milestone, m1, 2025-09-29, 1d
-    Informe piloto docentes/estudiantes (Mes 3)                :milestone, m3, 2025-11-25, 1d
-    Documentación + guías (Mes 6)                              :milestone, m6a, 2026-02-17, 1d
-    Capacitación docente (Mes 6)                               :milestone, m6b, 2026-02-17, 1d
-    Informe integración en cursos (Mes 10)                     :milestone, m10, 2026-06-02, 1d
-    Informe final e impacto (Mes 12)                           :milestone, m12, 2026-08-11, 1d
+    section Entregables
+    Infraestructura operativa (Mes 1)             :milestone, m1, 2025-09-29, 0d
+    Informe piloto (Mes 3)                        :milestone, m3, 2025-11-25, 0d
+    Doc y guias (Mes 6)                           :milestone, m6a, 2026-02-17, 0d
+    Capacitacion docente (Mes 6)                  :milestone, m6b, 2026-02-17, 0d
+    Informe integracion (Mes 10)                  :milestone, m10, 2026-06-02, 0d
+    Informe final e impacto (Mes 12)              :milestone, m12, 2026-08-11, 0d
 
+```
 
 ---
 
