@@ -7,7 +7,7 @@
 
 ---
 
-## 1. CONdICIONES DE USO Y LICENCIA
+## 1. CONDICIONES DE USO Y LICENCIA
 
 Este proyecto se desarrolla bajo un enfoque de ciencia abierta y transparencia académica. La propuesta, así como los scripts y documentos asociados, se publican en un repositorio público de GitHub con fines educativos e investigativos, permitiendo su consulta y reutilización por parte de la comunidad.
 
