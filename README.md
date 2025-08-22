@@ -17,10 +17,12 @@ para estudiantes, docentes e investigadores.
 
 ## 🚀 Objetivos del proyecto
 
-- Proveer una infraestructura cloud para prácticas, cursos y proyectos de investigación.
-- Facilitar el uso de herramientas como Python, R y Julia en notebooks accesibles desde la web.
-- Capacitar docentes y estudiantes en su uso con recursos compartidos y controlados.
-- Asegurar un uso eficiente de los USD $5000 en créditos asignados por Google Cloud.
+- Diseñar e implementar una infraestructura educativa en la nube basada en JupyterHub.  
+- Proveer entornos de análisis y programación en **Python, R y Julia**, accesibles desde la web.  
+- Fortalecer la **docencia** con integración en cursos y capacitación docente.  
+- Favorecer la **investigación** con espacios de experimentación colaborativa y reproducible.  
+- Impulsar la **extensión** mediante apoyo a semilleros y proyectos con alcance externo.  
+- Monitorear y optimizar recursos asegurando sostenibilidad más allá de los créditos iniciales.
 
 ---
 
@@ -30,7 +32,8 @@ para estudiantes, docentes e investigadores.
 proyecto-jupyterhub-eia/
 │
 ├── docs/                      # Sitio web para GitHub Pages (Markdown)
-│   ├── index.md               # Inicio y resumen ejecutivo
+│   ├── anexos.md              # Anexos técnicos del proyecto
+|   ├── index.md               # Inicio y resumen ejecutivo
 │   ├── propuesta.md           # Propuesta institucional completa
 │   ├── infraestructura.md     # Arquitectura técnica y uso de GCP
 │   ├── cronograma.md          # Entregables y fechas
@@ -65,7 +68,7 @@ Contiene una versión navegable de toda la documentación.
 
 ## 📌 Tecnologías utilizadas
 
-- **JupyterHub** (versión multiusuario)
+- **JupyterHub** (plataforma multiusuario)
 - **Python, R, Julia** como lenguajes base
 - **Google Cloud Platform** (Compute Engine / GKE / Cloud Storage)
 - **MkDocs** con tema Material para documentación web
@@ -82,14 +85,11 @@ Contiene una versión navegable de toda la documentación.
 
 ---
 
-## 📬 Contacto
+## 📂 Propuesta completa
 
-Si deseas conocer más sobre esta iniciativa o replicarla en tu institución, puedes escribir a:
+La propuesta detallada con justificación, metodología, entregables y plan de sostenibilidad está disponible en:
 
-📧 jaime.sanchez@eia.edu.co
-📧 juan.valencia72@eia.edu.co
-📧 duvan.gomez36@eia.edu.co
-📧 adriana.quinchia@eia.edu.co
+👉 [`docs/propuesta.md`](./docs/propuesta.md)
 
 ---
 
@@ -101,5 +101,16 @@ El proyecto cuenta con el apoyo de **Google Cloud Research Credits (USD $5000)**
 
 ---
 
-_Última actualización: agosto de 2025_
+## 📬 Contacto
 
+Si deseas conocer más sobre esta iniciativa o replicarla en tu institución, puedes escribir a:
+
+📧 jaime.sanchez@eia.edu.co
+📧 juan.valencia72@eia.edu.co
+📧 duvan.gomez36@eia.edu.co
+📧 adriana.quinchia@eia.edu.co
+
+---
+
+
+_Última actualización: agosto de 2025_
