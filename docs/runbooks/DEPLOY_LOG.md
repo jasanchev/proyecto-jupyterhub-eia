@@ -1,10 +1,34 @@
-### Paso 1 — Instalación de herramientas en WSL2
+### Paso 1 — Preparación del entorno local (WSL2 + herramientas)
+
+**Comandos ejecutados:**  
+```bash
+wsl --install -d Ubuntu
+sudo apt update && sudo apt upgrade -y
+bash scripts/wsl2_starter.sh
+```
+**Evidencia:***
+```text
 - gcloud instalado: v536.0.1
 - kubectl instalado: v1.33.4
 - helm instalado: v3.18.6
 - Fecha: 2025-08-27
+```
 
 ### Paso 2 — Configuración inicial de gcloud
+
+**Comandos ejecutados:**
+```bash
+gcloud auth login
+gcloud auth application-default login
+gcloud projects list
+gcloud config set project <PROJECT_ID>
+gcloud config set compute/region southamerica-west1
+gcloud services enable compute.googleapis.com
+gcloud services enable container.googleapis.com
+gcloud services enable artifactregistry.googleapis.com
+```
+**Evidencia:**
+
 - Autenticación completada con la cuenta: jasanchev@gmail.com
 - Proyecto seleccionado: proyecto-jupyterhub-eia
 - Región: southamerica-west1
@@ -16,12 +40,18 @@
 
 ### Paso 3 — Creación del clúster GKE Autopilot
 
-Comando ejecutado:  
+**Comandos ejecutados:**
+```bash  
 gcloud container clusters create-auto jhub-autopilot \  
   --region=southamerica-west1 \  
   --release-channel=regular  
+gcloud container clusters get-credentials jhub-autopilot --region=southamerica-west1
+kubectl cluster-info
+kubectl get ns
+kubectl get storageclass
+```
+**Evidencia de conexión al clúster:**
 
-Evidencia de conexión al clúster:  
 $ gcloud container clusters get-credentials jhub-autopilot --region=southamerica-west1  
 Fetching cluster endpoint and auth data.  
 kubeconfig entry generated for jhub-autopilot.  
@@ -45,8 +75,69 @@ Observación: En Autopilot es normal que `kubectl get nodes` muestre “No resou
 Fecha: 2025-08-27  
 
 ### Paso 4 — IP global reservada
+**Comandos ejecutados:**
+```bash
+gcloud compute addresses create jhub-ip --global
+gcloud compute addresses describe jhub-ip --global --format="get(address)"
+kubectl create namespace jhub
+kubectl apply -n jhub -f k8s/jhub-managedcert.yaml
+kubectl -n jhub describe managedcertificate jhub-cert
+```
+**Evidencia:**
 
 - **IP global:** 34.107.233.192
 - **Namespace creado:** jhub
 - **Fecha:** 2025-08-27
 
+### Paso 5 — Instalación de JupyterHub con Helm
+
+Comandos ejecutados:
+
+helm repo add jupyterhub https://hub.jupyter.org/helm-chart/
+helm repo update
+helm upgrade --install jhub jupyterhub/jupyterhub \
+  --namespace jhub \
+  --values k8s/config.yaml
+kubectl -n jhub get pods,svc,ingress
+
+
+Evidencia:
+
+- Pods en estado Running
+- Ingress con IP y dominio activo
+
+
+Fecha: YYYY-MM-DD
+
+### Paso 6 — Pruebas de acceso
+
+Comandos ejecutados:
+
+kubectl -n jhub get ingress
+kubectl -n jhub logs deploy/hub
+
+
+Evidencia:
+
+- Acceso web: https://jupyterhub.eia.edu.co
+- Login exitoso con FirstUseAuthenticator
+
+
+Fecha: YYYY-MM-DD
+
+### Paso 7 — (Opcional) Integración con Google OAuth
+
+Comandos ejecutados:
+
+# credenciales OAuth creadas en GCP
+helm upgrade --install jhub jupyterhub/jupyterhub \
+  --namespace jhub \
+  --values k8s/config-oauth.yaml
+
+
+Evidencia:
+
+- Autenticación funcionando con cuentas institucionales Google
+
+
+Fecha: YYYY-MM-DD
