@@ -1,0 +1,44 @@
+# -------------------------------
+# CONFIGURACIÓN JUPYTERHUB EN GKE
+# -------------------------------
+
+proxy:
+  service:
+    type: ClusterIP              # En GKE usamos Ingress GCE, no un LoadBalancer directo
+
+ingress:
+  enabled: true                  # Activamos Ingress en lugar de usar NodePort/LoadBalancer
+  hosts:
+    - jupyterhub.<TU_DOMINIO>    # Aquí va el subdominio institucional (ej: jupyterhub.eia.edu.co)
+  annotations:                   # Anotaciones específicas de GKE para HTTPS
+    kubernetes.io/ingress.class: "gce"   # Ingress de Google Cloud
+    kubernetes.io/ingress.global-static-ip-name: "jhub-ip"   # Nombre de la IP global reservada en GCP
+    networking.gke.io/managed-certificates: "jhub-cert"      # Certificado TLS gestionado por Google
+
+singleuser:
+  image:
+    name: quay.io/jupyter/datascience-notebook   # Imagen base con Python + R + stack científico
+    tag: latest
+  defaultUrl: /lab            # Abrir JupyterLab por defecto
+  storage:
+    type: dynamic             # StorageClass dinámica de GKE (GCE Persistent Disks CSI)
+  cpu:
+    guarantee: 0.5            # CPU garantizada por usuario
+    limit: 1                  # Límite máximo de CPU por usuario
+  memory:
+    guarantee: 1G             # RAM garantizada
+    limit: 2G                 # Límite máximo de RAM
+
+hub:
+  config:
+    JupyterHub:
+      authenticator_class: firstuseauthenticator.FirstUseAuthenticator
+      # Usamos FirstUse para pruebas: cada usuario define contraseña en su primer login
+    Authenticator:
+      admin_users:
+        - <TU_USUARIO_ADMIN>  # Reemplaza por tu usuario admin inicial (ej: jasanchev)
+
+# Nota:
+# - Más adelante, cuando actives Google OAuth, cambia el bloque hub.config.
+# - Puedes ajustar recursos (cpu/memory) según el número de usuarios simultáneos.
+
