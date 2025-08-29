@@ -43,3 +43,9 @@ standard-rwo     pd.csi.storage.gke.io      ...
 Observación: En Autopilot es normal que `kubectl get nodes` muestre “No resources found” mientras no haya pods ejecutándose. El cluster se activa bajo demanda.
 
 Fecha: 2025-08-27
+
+### Paso 4 — IP global reservada
+IP global: 34.107.233.192
+Namespace creado: jhub
+Fecha: 2025-08-27
+
