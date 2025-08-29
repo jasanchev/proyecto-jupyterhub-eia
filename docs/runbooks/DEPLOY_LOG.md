@@ -89,25 +89,19 @@ kubectl -n jhub describe managedcertificate jhub-cert
 - **Namespace creado:** jhub
 - **Fecha:** 2025-08-27
 
-### Paso 5 — Instalación de JupyterHub con Helm
+### Paso 5 (prep) — Configuración de JupyterHub lista
 
-Comandos ejecutados:
+Archivo: config.yaml actualizado
 
-helm repo add jupyterhub https://hub.jupyter.org/helm-chart/
-helm repo update
-helm upgrade --install jhub jupyterhub/jupyterhub \
-  --namespace jhub \
-  --values k8s/config.yaml
-kubectl -n jhub get pods,svc,ingress
+- proxy.service: ClusterIP
+- ingress.enabled: true (con GCE + IP global + ManagedCert)
+- singleuser: imagen quay.io/jupyter/datascience-notebook:latest
+- Recursos: 0.5 vCPU / 1–2 GiB RAM
+- Autenticación: FirstUseAuthenticator
+- admin_users configurado (no se listan los nombres por seguridad)
 
+Fecha: 2025-08-27
 
-Evidencia:
-
-- Pods en estado Running
-- Ingress con IP y dominio activo
-
-
-Fecha: YYYY-MM-DD
 
 ### Paso 6 — Pruebas de acceso
 
