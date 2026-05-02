@@ -11,6 +11,7 @@ env.sh
 # El ConfigMap real con emails vive solo en local + clúster.
 # Se versiona la plantilla con sufijo .example
 jhub-users-configmap.yaml
+!jhub-users-configmap.yaml.example
 users.txt
 gpu_users.txt
 vip-users.txt

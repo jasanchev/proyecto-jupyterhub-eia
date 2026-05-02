@@ -1,0 +1,95 @@
+# =============================================================================
+#  ConfigMap: jhub-users-config (PLANTILLA EJEMPLO)
+# =============================================================================
+#  Esta es la PLANTILLA pública del ConfigMap que controla el acceso a
+#  JupyterHub. El archivo REAL con correos institucionales (Habeas Data,
+#  Ley 1581/2012) NO está versionado — vive solo en local + clúster.
+#
+#  Para usar en otra institución:
+#    1. Copiar este archivo:    cp jhub-users-configmap.yaml.example jhub-users-configmap.yaml
+#    2. Reemplazar correos placeholder por los correos reales.
+#    3. Aplicar al clúster:     kubectl apply -f jhub-users-configmap.yaml
+#
+#  El archivo se monta en el pod del Hub en /etc/jupyterhub/jhub-users/
+#  El código Python en values-datahub-prod.yaml (extraConfig
+#  "01-dynamic-profiles") lee estos archivos en cada login.
+#
+#  Reglas de cada archivo .txt:
+#    - Una dirección de correo por línea.
+#    - Líneas vacías son ignoradas.
+#    - Líneas que empiezan con # son comentarios (ignoradas).
+#    - Comparación case-insensitive.
+#
+#  Para actualizar cualquier lista (sin reiniciar el Hub):
+#    1. Editar este archivo.
+#    2. kubectl apply -f jhub-users-configmap.yaml
+#    3. El Hub leerá la nueva lista en el siguiente login de usuario.
+# =============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jhub-users-config
+  namespace: jhub
+  labels:
+    app: jupyterhub
+    purpose: access-control
+data:
+
+  # ---------------------------------------------------------------------------
+  #  admin_users.txt
+  # ---------------------------------------------------------------------------
+  #  Administradores del Hub: tienen acceso al panel /hub/admin para
+  #  gestionar usuarios, ver sesiones activas y forzar shutdowns.
+  #
+  #  ⚠️ Estos usuarios también deben estar en allowed_users.txt para
+  #     poder iniciar sesión.
+  #
+  #  ⚠️ Si el archivo está vacío o falta, NO se setea ningún admin
+  #     (panel /hub/admin queda inaccesible). Es intencional: mejor sin
+  #     admin que con admin equivocado.
+  # ---------------------------------------------------------------------------
+  admin_users.txt: |
+    # Coordinador(es) del proyecto
+    admin1@example.edu
+    admin2@example.edu
+
+  # ---------------------------------------------------------------------------
+  #  allowed_users.txt
+  # ---------------------------------------------------------------------------
+  #  Usuarios autorizados a iniciar sesión en JupyterHub.
+  #  Solo ven perfiles CPU a menos que también estén en gpu_users.txt.
+  #
+  #  ⚠️ Si el archivo está vacío o falta, el Hub mantiene acceso ABIERTO
+  #     a cualquier usuario autenticado por OAuth (allow_all = True).
+  #     Esto previene lockout accidental durante la configuración inicial.
+  #     En producción, llenar el archivo para restringir el acceso.
+  # ---------------------------------------------------------------------------
+  allowed_users.txt: |
+    # Coordinadores del proyecto
+    admin1@example.edu
+    admin2@example.edu
+
+    # Profesores con acceso GPU
+    profesor1@example.edu
+    profesor2@example.edu
+    profesor3@example.edu
+
+    # Curso: [nombre del curso] — Semestre [YYYY-N]
+    # estudiante1@example.edu
+    # estudiante2@example.edu
+
+  # ---------------------------------------------------------------------------
+  #  gpu_users.txt
+  # ---------------------------------------------------------------------------
+  #  Usuarios autorizados al perfil GPU (NVIDIA L4 en este despliegue).
+  #
+  #  ⚠️ Estos usuarios también deben estar en allowed_users.txt.
+  #
+  #  ⚠️ Cuota actual del proyecto: 1 GPU L4 → solo 1 usuario VIP a la vez
+  #     puede tener una sesión GPU activa. Coordinar internamente.
+  # ---------------------------------------------------------------------------
+  gpu_users.txt: |
+    # Profesores con acceso al perfil GPU
+    profesor1@example.edu
+    profesor2@example.edu
+    profesor3@example.edu
