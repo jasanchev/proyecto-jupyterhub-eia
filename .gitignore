@@ -1,0 +1,49 @@
+# === Secretos y credenciales ===
+*.pem
+*.key
+*.crt
+env.sh
+.env
+.env.*
+!.env.example
+
+# === Datos personales (Habeas Data, Ley 1581/2012) ===
+# El ConfigMap real con emails vive solo en local + clúster.
+# Se versiona la plantilla con sufijo .example
+jhub-users-configmap.yaml
+users.txt
+gpu_users.txt
+vip-users.txt
+
+# === Backups y experimentos locales ===
+*.bak
+*.backup
+*.before-*
+backup-*
+recovered-*
+*-recuperado.yaml
+*_recuperado.yaml
+
+# === Manifiestos y archivos personales ===
+pod-jaime.yaml
+notas.md
+ventas_demo.csv
+
+# === Carpeta local para drafts y referencias personales ===
+# (no se versiona, contiene archivos que no son parte del despliegue)
+_local/
+
+# === Imágenes Docker locales (pesadas) ===
+docker-images/
+
+# === Sistema ===
+.DS_Store
+__pycache__/
+*.pyc
+*.pyo
+.vscode/
+.idea/
+
+# === Logs y temporales ===
+*.log
+*.tmp

@@ -1,0 +1,10 @@
+# Forzar LF para todos los archivos de texto en este repo.
+# Crítico porque los YAML van a un clúster Linux (GKE) y los scripts
+# .sh fallan con CRLF.
+* text=auto eol=lf
+
+# Archivos binarios: que git no los toque
+*.png binary
+*.jpg binary
+*.pdf binary
+*.tar.gz binary
