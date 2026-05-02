@@ -1,0 +1,512 @@
+# =============================================================================
+#  JupyterHub - DataHub EIA Platform
+# =============================================================================
+#  Project:        JupyterHub for teaching and research - Universidad EIA
+#  Public URL:     https://datahub.eia.edu.co
+#  Cluster:        GKE Autopilot (us-central1)
+#  Helm chart:     jupyterhub/jupyterhub v4.3.1
+#  Last updated:   April 30, 2026
+#
+#  This configuration uses the official Zero to JupyterHub chart:
+#    https://z2jh.jupyter.org
+#
+#  Apply with:
+#    helm upgrade jhub jupyterhub/jupyterhub \
+#      --namespace jhub \
+#      --values values-datahub-prod.yaml \
+#      --atomic --timeout 10m
+#
+#  Required external resources (NOT in this file):
+#    - Secret    azuread-auth-secret  → OAuth credentials (client_id, secret, tenant)
+#    - Secret    jhub-cookie-secret   → JupyterHub cookie signing key
+#    - ConfigMap jhub-users-config    → authorized users (login + GPU profile access)
+# =============================================================================
+
+
+# =============================================================================
+#  1. INGRESS: HTTPS entry point to the cluster
+# =============================================================================
+#  Traffic flow:
+#    User → Cloudflare (university proxy) → GCE Load Balancer → Ingress → proxy pod
+#
+#  TLS is managed by GCP (preshared cert "jhub-tls-v3"), not by cert-manager.
+#  Cloudflare acts as TLS passthrough for JupyterHub (Rocket Loader disabled
+#  on /hub/* — see docs/runbooks/DEPLOY_LOG.md).
+# =============================================================================
+ingress:
+  enabled: true
+  ingressClassName: "gce"
+  annotations:
+    kubernetes.io/ingress.class: "gce"
+    # Force HTTPS only. Any HTTP attempt is rejected at the LB level.
+    kubernetes.io/ingress.allow-http: "false"
+    # Static global IP reserved in GCP (does not change between redeployments).
+    kubernetes.io/ingress.global-static-ip-name: "jhub-ip"
+    # Preshared TLS certificate, managed outside the cluster via Cloud Console.
+    ingress.gcp.kubernetes.io/pre-shared-cert: "jhub-tls-v3"
+  hosts:
+    # ⚠️ Change this domain if reusing this config in another institution.
+    - datahub.eia.edu.co
+
+
+# =============================================================================
+#  2. PROXY: internal configurable-http-proxy
+# =============================================================================
+#  JupyterHub component that routes HTTP traffic to each user's pod. We set
+#  it as ClusterIP because TLS terminates at the external GCE LB, no internal
+#  HTTPS needed between LB and this proxy.
+# =============================================================================
+proxy:
+  service:
+    type: ClusterIP
+    annotations:
+      # Enable Network Endpoint Groups (NEG) for direct LB-to-pod routing.
+      # Better performance vs IP-based routing through kube-proxy.
+      cloud.google.com/neg: '{"ingress": true}'
+      # Custom backend config with sticky sessions for OAuth flow stability.
+      # The BackendConfig "jhub-sticky-conf" must be applied separately.
+      cloud.google.com/backend-config: '{"default":"jhub-sticky-conf"}'
+  https:
+    # HTTP plain internally. External TLS is terminated at the GCE Load Balancer.
+    enabled: false
+
+
+# =============================================================================
+#  3. HUB: JupyterHub central orchestrator
+# =============================================================================
+hub:
+
+  # ---------------------------------------------------------------------------
+  #  3.1 Auxiliary services: cull-idle (automatic shutdown)
+  # ---------------------------------------------------------------------------
+  #  Stops idle user servers to free cluster resources and protect Google
+  #  Cloud credit consumption.
+  #
+  #  Current policy:
+  #    - 30 min of kernel inactivity → shut down pod
+  #    - 4 hours absolute maximum, even if active (prevents forgotten sessions)
+  # ---------------------------------------------------------------------------
+  services:
+    cull-idle:
+      admin: true
+      command:
+        - "python3"
+        - "-m"
+        - "jupyterhub_idle_culler"
+        - "--timeout=1800"     # Inactivity threshold: 30 min
+        - "--cull-every=300"   # Check every 5 min
+        - "--concurrency=10"   # Up to 10 servers stopped in parallel
+        - "--max-age=14400"    # Absolute cap: 4 hours per session
+
+  # ---------------------------------------------------------------------------
+  #  3.2 Hub cookie secret
+  # ---------------------------------------------------------------------------
+  #  Key used to sign JupyterHub session cookies. The Secret must exist
+  #  before running helm upgrade:
+  #
+  #    kubectl create secret generic jhub-cookie-secret \
+  #      --from-literal=hub.cookie-secret=$(openssl rand -hex 32) \
+  #      -n jhub
+  # ---------------------------------------------------------------------------
+  existingSecret: "jhub-cookie-secret"
+
+  # ---------------------------------------------------------------------------
+  #  3.3 Hub configuration (traitlets object)
+  # ---------------------------------------------------------------------------
+  config:
+
+    # -------------------------------------------------------------------------
+    #  JupyterHub: general configuration
+    # -------------------------------------------------------------------------
+    JupyterHub:
+      # Authenticator with Microsoft Entra ID (Azure AD) — institutional SSO.
+      authenticator_class: "azuread"
+      # After login, show profile selection page (instead of redirecting
+      # directly to the user's server).
+      redirect_to_server: false
+
+    # -------------------------------------------------------------------------
+    #  KubeSpawner: how each user's pod is created
+    # -------------------------------------------------------------------------
+    #  These timeouts are sized to support GPU profiles, where the first
+    #  spawn can take 7-10 min (node provisioning + GPU image download
+    #  ~7.6 GB). DO NOT lower these values without validation.
+    # -------------------------------------------------------------------------
+    KubeSpawner:
+      default_url: "/lab"          # Start in JupyterLab (not classic Notebook)
+      start_timeout: 1200          # 20 min — enough for Autopilot + GPU image pull
+      http_timeout: 600            # 10 min for user HTTP responses
+      image_pull_policy: "IfNotPresent"  # Don't re-pull if image exists on node
+
+    # -------------------------------------------------------------------------
+    #  AzureAdOAuthenticator: SSO with institutional Microsoft 365
+    # -------------------------------------------------------------------------
+    #  client_id, client_secret and tenant_id are intentionally empty.
+    #  They are loaded at runtime from the azuread-auth-secret via environment
+    #  variables (see blocks 3.4 extraEnv and 3.6 extraConfig).
+    # -------------------------------------------------------------------------
+    AzureAdOAuthenticator:
+      # Credentials injected from Kubernetes Secret at runtime
+      client_id: ""
+      client_secret: ""
+      tenant_id: ""
+
+      # URL Microsoft redirects to after successful login
+      oauth_callback_url: "https://datahub.eia.edu.co/hub/oauth_callback"
+
+      # Login button label shown to the user
+      login_service: "Microsoft 365 (EIA)"
+
+      # Identify users by their UPN (full institutional email).
+      # Example: jaime.sanchez@eia.edu.co
+      username_claim: "upn"
+
+      # ⚠️ Access control (allow_all, allowed_users, admin_users) is set
+      # DYNAMICALLY by the Python block "01-dynamic-profiles" below, which
+      # reads three files from the jhub-users-config ConfigMap:
+      #   - allowed_users.txt → who can log in
+      #   - admin_users.txt   → who has /hub/admin access
+      #   - gpu_users.txt     → who can use the GPU profile
+      #
+      # This means user lists can be updated WITHOUT helm upgrade, by just
+      # editing the ConfigMap and applying it (kubectl apply).
+
+      # ---------------------------------------------------------------------
+      #  Critical configuration for DOUBLE-PROXY architecture
+      #  (Cloudflare + GCE Load Balancer)
+      # ---------------------------------------------------------------------
+      #  Without these settings, the OAuth flow fails with 403 XSRF cookie
+      #  mismatch error. Documented in docs/runbooks/DEPLOY_LOG.md
+      # ---------------------------------------------------------------------
+
+      # Trust the X-Forwarded-Proto header to detect external HTTPS
+      # (Hub receives plain HTTP from LB but client uses HTTPS).
+      proxy_ssl_header: ['X-Forwarded-Proto', 'https']
+
+      # Cross-site session cookies, compatible with Cloudflare redirects
+      cookie_options:
+        SameSite: "None"   # Allow cookie on cross-origin redirects (OAuth)
+        Secure: true       # Only sent over HTTPS
+
+      # Trust X-Forwarded-* headers propagated by Cloudflare and GCE LB
+      trustxheaders: true
+      trusted_downstream_ips:
+        - "0.0.0.0/0"      # Trust any downstream IP (internal to LB layer)
+        - "::/0"
+
+      # Tornado settings to fix XSRF loops behind double proxy
+      tornado_settings:
+        headers:
+          # Cloudflare rewrites HTTP → HTTPS, this CSP ensures consistency
+          Content-Security-Policy: "upgrade-insecure-requests"
+        # Disable traditional XSRF cookies (broken by double-proxy chain)
+        xsrf_cookies: false
+        # XSRF cookie config compatible with HTTPS + SameSite cross-site
+        xsrf_cookie_kwargs:
+          secure: true
+          samesite: "none"
+          httponly: true   # Prevent JavaScript access (XSS mitigation)
+
+  # ---------------------------------------------------------------------------
+  #  3.4 Hub environment variables
+  # ---------------------------------------------------------------------------
+  #  Inject OAuth credentials from azuread-auth-secret as environment
+  #  variables. The Secret must be created beforehand:
+  #
+  #    kubectl create secret generic azuread-auth-secret \
+  #      --from-literal=client_id=XXX \
+  #      --from-literal=client_secret=YYY \
+  #      --from-literal=tenant_id=ZZZ \
+  #      -n jhub
+  # ---------------------------------------------------------------------------
+  extraEnv:
+    AZUREAD_CLIENT_ID:
+      valueFrom:
+        secretKeyRef:
+          name: azuread-auth-secret
+          key: client_id
+    AZUREAD_CLIENT_SECRET:
+      valueFrom:
+        secretKeyRef:
+          name: azuread-auth-secret
+          key: client_secret
+    AZUREAD_TENANT_ID:
+      valueFrom:
+        secretKeyRef:
+          name: azuread-auth-secret
+          key: tenant_id
+
+  # ---------------------------------------------------------------------------
+  #  3.5 Additional Hub volumes
+  # ---------------------------------------------------------------------------
+  #  Mount the jhub-users-config ConfigMap so the Python code can read user
+  #  authorization lists from a files, instead of hardcoding emails in
+  #  this yaml.
+  #  
+  #  Files mounted at /etc/jupyterhub/jhub-users/:
+  #    - admin_users.txt    → who has /hub/admin access
+  #    - allowed_users.txt  → who can log in
+  #    - gpu_users.txt      → who can access the GPU profile
+  #
+  #  To update any list (no helm upgrade needed):
+  #    kubectl apply -f jhub-users-configmap.yaml
+  # ---------------------------------------------------------------------------
+  extraVolumes:
+    - name: jhub-users
+      configMap:
+        name: jhub-users-config
+
+  extraVolumeMounts:
+    - name: jhub-users
+      mountPath: /etc/jupyterhub/jhub-users
+      readOnly: true
+
+  # ---------------------------------------------------------------------------
+  #  3.6 Additional Python configuration (extraConfig)
+  # ---------------------------------------------------------------------------
+  #  Python blocks executed at Hub startup. Alphabetical order determines
+  #  execution order, hence the numeric prefixes.
+  # ---------------------------------------------------------------------------
+  extraConfig:
+
+    # -------------------------------------------------------------------------
+    #  00 - Inject OAuth credentials from environment variables
+    # -------------------------------------------------------------------------
+    #  Overwrites the empty values in AzureAdOAuthenticator with actual
+    #  values loaded from the Secret. This makes the yaml safe to commit
+    #  to public repositories.
+    # -------------------------------------------------------------------------
+    00-azuread-secret-env: |
+      import os
+      c.AzureAdOAuthenticator.client_id = os.environ["AZUREAD_CLIENT_ID"]
+      c.AzureAdOAuthenticator.client_secret = os.environ["AZUREAD_CLIENT_SECRET"]
+      c.AzureAdOAuthenticator.tenant_id = os.environ["AZUREAD_TENANT_ID"]
+
+    # -------------------------------------------------------------------------
+    #  01 - Dynamic user profiles
+    # -------------------------------------------------------------------------
+    #  Defines which server options each user sees after login:
+    #
+    #    - PUBLIC PROFILES: visible to all authorized users (regular courses)
+    #    - GPU PROFILE: only for users listed in gpu_users.txt
+    #
+    #  User lists are loaded from /etc/jupyterhub/jhub-users/:
+    #    - allowed_users.txt -> who can log in (checked by AzureAdOAuthenticator)
+    #    - admin_users.txt   -> who has /hub/admin panel access
+    #    - gpu_users.txt     -> who can access the GPU profile
+    #  (mounted from jhub-users-config ConfigMap)
+    # -------------------------------------------------------------------------
+    01-dynamic-profiles: |
+      from pathlib import Path
+
+      def load_user_list(filename):
+          """
+          Read a list of emails from a text file mounted in the pod.
+          Each line is one email. Empty lines and comments (starting with #)
+          are ignored.
+          """
+          path = Path(f"/etc/jupyterhub/jhub-users/{filename}")
+          if not path.exists():
+              return set()
+          users = set()
+          for line in path.read_text().splitlines():
+              line = line.strip().lower()
+              if line and not line.startswith("#"):
+                  users.add(line)
+          return users
+
+      # --- Access control: load user lists from ConfigMap (no helm upgrade needed) ---
+      allowed = load_user_list("allowed_users.txt")
+      admins  = load_user_list("admin_users.txt")
+
+      # Login authorization
+      if allowed:
+          c.AzureAdOAuthenticator.allowed_users = allowed
+          c.AzureAdOAuthenticator.allow_all = False
+      else:
+          # Empty file or missing → keep open access to avoid accidental lockout.
+          # All authenticated @eia.edu.co users can log in until the file is filled.
+          c.AzureAdOAuthenticator.allow_all = True
+
+      # Admin panel authorization (/hub/admin)
+      if admins:
+          c.AzureAdOAuthenticator.admin_users = admins
+      # If admin_users.txt is empty/missing, no admin is set (panel inaccessible).
+      # This is intentional: better no admin than wrong admin.
+
+      async def custom_profile_list(spawner):
+          user = spawner.user
+
+          # Load GPU list from ConfigMap (reloadable without Hub restart)
+          gpu_allowed_users = load_user_list("gpu_users.txt")
+
+          # ===================================================================
+          # PUBLIC PROFILES — visible to any authenticated user
+          # (access already filtered upstream by allowed_users.txt)
+          # ===================================================================
+          # Note: display_name and description are kept in Spanish because
+          # they are shown to end users (students, faculty).
+          # ===================================================================
+
+          profile_list = [
+              {
+                  "display_name": "📐 Investigación de Operaciones (EIA)",
+                  "description": "Programación lineal, redes, optimización y modelado matemático.",
+                  "kubespawner_override": {
+                      "image": "us-central1-docker.pkg.dev/jupyterhub-eia/jupyterhub-images/io-eia:v1",
+                      "cpu_limit": 1,
+                      "mem_limit": "2G",
+                  }
+              },
+              {
+                  "display_name": "🐍 Simulación y Ciencia de Datos (EIA)",
+                  "description": "Entorno oficial con SimPy, Plotly y nbgitpuller.",
+                  "default": True,
+                  "kubespawner_override": {
+                      "image": "jasanchev/eia-simulacion:v1",
+                      "cpu_limit": 1,
+                      "mem_limit": "2G",
+                  }
+              },
+              {
+                  "display_name": "📈 Entorno R-Studio",
+                  "description": "Análisis estadístico con lenguaje R.",
+                  "kubespawner_override": {
+                      "image": "jupyter/r-notebook:latest",
+                      "cpu_limit": 1,
+                      "mem_limit": "2G",
+                  }
+              },
+              {
+                  "display_name": "🟣 Entorno Julia",
+                  "description": "Computación científica de alto rendimiento.",
+                  "kubespawner_override": {
+                      "image": "jupyter/datascience-notebook:latest",
+                      "cpu_limit": 1,
+                      "mem_limit": "2G",
+                  }
+              }
+          ]
+
+          # ===================================================================
+          # VIP PROFILE — NVIDIA L4 GPU (authorized users only)
+          # ===================================================================
+          # This profile only appears as an option if the user's email is
+          # listed in gpu_users.txt within the jhub-users-config ConfigMap.
+          # ===================================================================
+          if user.name.lower() in gpu_allowed_users:
+              profile_list.append({
+                  "display_name": "🚀 Entorno de Investigación GPU (NVIDIA L4)",
+                  "description": (
+                      "⏱️ Primer arranque: 10-15 min (descarga imagen ~9GB + "
+                      "provisión GPU). NO cierres la pestaña ni recargues. "
+                      "Solo 1 usuario VIP a la vez (cuota actual)."
+                  ),
+                  "kubespawner_override": {
+                      "image": "cschranz/gpu-jupyter:v1.9_cuda-12.6_ubuntu-24.04",
+                      "cpu_limit": 8,
+                      "mem_limit": "32G",
+                      "extra_resource_limits": {"nvidia.com/gpu": "1"},
+                      # GKE Autopilot syntax: do NOT use "nvidia-tesla-l4"
+                      "node_selector": {
+                          "cloud.google.com/gke-accelerator": "nvidia-l4",
+                          "cloud.google.com/gke-accelerator-count": "1"
+                      },
+                      # Required because GPU nodes have automatic taints
+                      "tolerations": [
+                          {
+                              "key": "nvidia.com/gpu",
+                              "operator": "Equal",
+                              "value": "present",
+                              "effect": "NoSchedule"
+                          }
+                      ],
+                      # Separate PVC to avoid zone conflicts with CPU profiles
+                      "pvc_name_template": "claim-{username}-gpu",
+                      # Higher timeouts to tolerate GPU startup
+                      "start_timeout": 1200,
+                      "http_timeout": 600
+                  }
+              })
+
+          return profile_list
+
+      c.KubeSpawner.profile_list = custom_profile_list
+
+
+# =============================================================================
+#  4. SINGLEUSER: per-user pod configuration
+# =============================================================================
+singleuser:
+
+  # Required so the gcsfuse sidecar can mount the shared bucket
+  extraAnnotations:
+    gke-gcsfuse/volumes: "true"
+
+  # Maximum pod startup time (includes image pull + init).
+  # 15 min is generous but necessary for profiles with large images (GPU).
+  startTimeout: 900
+
+  # ---------------------------------------------------------------------------
+  #  4.1 SECURITY: node metadata access blocking
+  # ---------------------------------------------------------------------------
+  #  We disable iptables blocking because GKE Autopilot already manages this
+  #  internally with native security policies. Enabling it here would conflict
+  #  with Autopilot.
+  #
+  #  ⚠️ DO NOT REMOVE: setting to true will break pod startup in Autopilot.
+  # ---------------------------------------------------------------------------
+  cloudMetadata:
+    blockWithIptables: false
+
+  # ---------------------------------------------------------------------------
+  #  4.2 STORAGE: persistent home + shared bucket
+  # ---------------------------------------------------------------------------
+  #  Each user gets:
+  #    - 3 GB persistent in /home/jovyan (dynamic PVC, survives between sessions)
+  #    - Shared GCS bucket at /srv/shared (read-only, for common datasets)
+  #
+  #  ⚠️ DO NOT REMOVE: dynamic storage requires these exact blocks to work
+  #     with the standard-rwo storage class on GKE.
+  # ---------------------------------------------------------------------------
+  storage:
+    type: dynamic
+    capacity: 3Gi
+    dynamic:
+      storageClass: standard-rwo
+
+    # Additional volume: shared Cloud Storage bucket (read-only)
+    extraVolumes:
+      gcs-shared:
+        name: gcs-shared
+        csi:
+          driver: gcsfuse.csi.storage.gke.io
+          readOnly: true
+          volumeAttributes:
+            bucketName: jhub-eia-shared
+            mountOptions: "implicit-dirs"
+
+    # Mount point of the bucket inside the user's pod
+    extraVolumeMounts:
+      gcs-shared:
+        name: gcs-shared
+        mountPath: /srv/shared
+        readOnly: true
+
+
+# =============================================================================
+#  5. SCHEDULING: intentionally disabled
+# =============================================================================
+#  In GKE Autopilot, advanced scheduling (user-scheduler, podPriority,
+#  userPlaceholder) is NOT necessary and may conflict with Autopilot's
+#  native scheduler. So we explicitly disable these blocks.
+#
+#  If migrating to GKE Standard in the future, evaluate re-enabling them.
+# =============================================================================
+scheduling:
+  userScheduler:
+    enabled: false
+  podPriority:
+    enabled: false
+  userPlaceholder:
+    enabled: false
