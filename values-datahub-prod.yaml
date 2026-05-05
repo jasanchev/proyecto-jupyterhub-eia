@@ -360,10 +360,10 @@ hub:
               },
               {
                   "display_name": "🐍 Simulación y Ciencia de Datos (EIA)",
-                  "description": "Entorno oficial con SimPy, Plotly y nbgitpuller.",
+                  "description": "Entorno oficial con SimPy, Plotly, nbgitpuller y acceso a Google BigQuery.",
                   "default": True,
                   "kubespawner_override": {
-                      "image": "jasanchev/eia-simulacion:v1",
+                      "image": "us-central1-docker.pkg.dev/jupyterhub-eia/jupyterhub-images/eia-simulacion:v2",
                       "cpu_limit": 1,
                       "mem_limit": "2G",
                   }
