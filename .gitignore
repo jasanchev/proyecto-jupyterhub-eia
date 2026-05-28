@@ -48,3 +48,9 @@ __pycache__/
 # === Logs y temporales ===
 *.log
 *.tmp
+
+# === Backups adicionales (.bak2, .bak3...) ===
+*.bak[0-9]
+
+# === Notebooks de trabajo / ejemplos (no son parte del despliegue) ===
+*.ipynb

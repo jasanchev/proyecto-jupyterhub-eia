@@ -395,18 +395,33 @@ hub:
           # listed in gpu_users.txt within the jhub-users-config ConfigMap.
           # ===================================================================
           if user.name.lower() in gpu_allowed_users:
+              # ---------------------------------------------------------------
+              # Derivar identificadores a partir del UPN del usuario.
+              #   user.name = "jaime.sanchez@eia.edu.co"
+              #   carpeta   = "jaime.sanchez"          (prefijo en el bucket)
+              #   ksa       = "gpu-ksa-jaime-sanchez"  (KSA en namespace jhub)
+              # ---------------------------------------------------------------
+              carpeta = user.name.lower().split("@")[0]
+              ksa = "gpu-ksa-" + carpeta.replace(".", "-")
+
               profile_list.append({
                   "display_name": "🚀 Entorno de Investigación GPU (NVIDIA L4)",
                   "description": (
                       "⏱️ Primer arranque: 10-15 min (descarga imagen ~9GB + "
                       "provisión GPU). NO cierres la pestaña ni recargues. "
-                      "Solo 1 usuario VIP a la vez (cuota actual)."
+                      "💾 Tu carpeta /home/jovyan/persistente se guarda en la "
+                      "nube. El resto del entorno es temporal."
                   ),
                   "kubespawner_override": {
                       "image": "cschranz/gpu-jupyter:v1.9_cuda-12.6_ubuntu-24.04",
                       "cpu_limit": 8,
                       "mem_limit": "32G",
                       "extra_resource_limits": {"nvidia.com/gpu": "1"},
+
+                      # KSA del investigador → activa Workload Identity.
+                      # El pod actúa como su GSA gpu-inv-N correspondiente.
+                      "service_account": ksa,
+
                       # GKE Autopilot syntax: do NOT use "nvidia-tesla-l4"
                       "node_selector": {
                           "cloud.google.com/gke-accelerator": "nvidia-l4",
@@ -421,8 +436,51 @@ hub:
                               "effect": "NoSchedule"
                           }
                       ],
-                      # Separate PVC to avoid zone conflicts with CPU profiles
-                      "pvc_name_template": "claim-{username}-gpu",
+
+                      # -----------------------------------------------------
+                      # Perfil GPU = espacio separado, SIN PVC zonal.
+                      # 'volumes' y 'volume_mounts' como claves directas de
+                      # kubespawner_override REEMPLAZAN la lista base del
+                      # chart (que incluye el PVC dinámico global). Sin PVC
+                      # → sin atadura de zona. Home efímero (emptyDir) +
+                      # carpeta persistente montada desde GCS.
+                      # -----------------------------------------------------
+                      "volumes": [
+                          # Scratch efímero para el home base
+                          {
+                              "name": "home-efimero",
+                              "emptyDir": {}
+                          },
+                          # Carpeta persistente del investigador en GCS
+                          # (bucket jhub-eia-trabajo, solo su prefijo)
+                          {
+                              "name": "trabajo-gcs",
+                              "csi": {
+                                  "driver": "gcsfuse.csi.storage.gke.io",
+                                  "volumeAttributes": {
+                                      "bucketName": "jhub-eia-trabajo",
+                                      "mountOptions": f"implicit-dirs,only-dir={carpeta}"
+                                  }
+                              }
+                          }
+                      ],
+                      "volume_mounts": [
+                          {
+                              "name": "home-efimero",
+                              "mountPath": "/home/jovyan"
+                          },
+                          {
+                              "name": "trabajo-gcs",
+                              "mountPath": "/home/jovyan/persistente"
+                          }
+                      ],
+
+                      # serviceAccountName en el pod spec, por robustez:
+                      # algunas versiones de KubeSpawner lo toman de aquí.
+                      "extra_pod_config": {
+                          "serviceAccountName": ksa
+                      },
+
                       # Higher timeouts to tolerate GPU startup
                       "start_timeout": 1200,
                       "http_timeout": 600

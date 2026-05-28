@@ -135,3 +135,69 @@ Evidencia:
 
 
 Fecha: YYYY-MM-DD
+
+### Paso 8 — Perfil GPU: almacenamiento efímero + bucket persistente por investigador (aislamiento IAM)
+
+**Fecha:** 2026-05-27
+
+**Problema que resuelve:**
+El perfil GPU usaba un PVC dinámico (pvc_name_template). Los PVC en GKE son
+zonales: una vez creado, el pod queda anclado a esa zona. Si esa zona no tenia
+GPU L4 disponible, el spawn fallaba con "GCE out of resources", aunque hubiera
+capacidad en otras zonas. Solucion: eliminar el PVC del perfil GPU (home
+efimero con emptyDir) y dar persistencia mediante una carpeta por investigador
+en un bucket GCS, con aislamiento real por IAM (Workload Identity).
+
+**Arquitectura resultante (perfil GPU):**
+- /home/jovyan             -> emptyDir (efimero, no ancla zona)
+- /home/jovyan/persistente -> carpeta del investigador en gs://jhub-eia-trabajo
+- /srv/shared              -> bucket compartido (solo lectura), sin cambios
+
+**1. Bucket de trabajo:**
+gcloud storage buckets create gs://jhub-eia-trabajo \
+  --project=jupyterhub-eia --location=us-central1 \
+  --uniform-bucket-level-access --public-access-prevention
+Carpeta por investigador: un objeto marcador <carpeta>/.keep por cada uno.
+
+**2. Identidades por investigador (x6):**
+- 1 GSA por investigador: gpu-inv-N@jupyterhub-eia.iam.gserviceaccount.com
+- 1 KSA por investigador en namespace jhub: gpu-ksa-<carpeta>
+- Workload Identity (dos direcciones):
+  - GSA: roles/iam.workloadIdentityUser para
+    serviceAccount:jupyterhub-eia.svc.id.goog[jhub/<ksa>]
+  - KSA: annotation iam.gke.io/gcp-service-account=<gsa-email>
+
+**3. Permisos sobre buckets:**
+- gs://jhub-eia-trabajo: cada GSA con roles/storage.objectAdmin
+  CONDICIONADO al prefijo propio:
+  resource.name.startsWith('projects/_/buckets/jhub-eia-trabajo/objects/<carpeta>/')
+  -> aislamiento de escritura: cada quien solo en su carpeta.
+- gs://jhub-eia-trabajo: cada GSA con roles/storage.legacyBucketReader SIN condicion.
+  -> CLAVE: gcsfuse necesita storage.objects.list (bucket-level) para montar.
+     La condicion de prefijo NO cubre el list (no es operacion sobre objeto),
+     asi que el montaje falla con PermissionDenied si falta este rol.
+- gs://jhub-eia-shared: cada GSA con roles/storage.objectViewer (solo lectura).
+
+**4. Cambio en values-datahub-prod.yaml (perfil GPU):**
+- Eliminado pvc_name_template.
+- volumes/volume_mounts como claves DIRECTAS de kubespawner_override
+  (reemplazan la lista base del chart, que incluia el PVC global; si se
+  ponen dentro de extra_pod_config NO reemplazan y el PVC se cuela).
+- service_account = KSA derivada del UPN del usuario.
+- only-dir=<carpeta> en gcsfuse -> cada pod solo ve su carpeta.
+
+**5. Validacion (OK):**
+CUDA disponible: True | GPU: NVIDIA L4
+Benchmark matmul 10000x10000 -> GPU 20.6x mas rapida que CPU
+Escritura en /home/jovyan/persistente confirmada en gs://jhub-eia-trabajo/<carpeta>/
+
+**NOTAS OPERATIVAS (importante para mantenimiento):**
+- ALTA de un investigador GPU = DOS pasos obligatorios:
+  (a) agregar su correo a gpu_users.txt en el ConfigMap (para que vea el perfil)
+  (b) crear su GSA + KSA + Workload Identity + condicion IAM + carpeta (Paso 2-3)
+  Si falta (b), el pod arranca pero falla al montar el bucket.
+- Cuota GPU: NVIDIA_L4_GPUS=16, GPUS_ALL_REGIONS=2 (limite efectivo: 2 GPUs
+  simultaneas). La cuota NO es el cuello de botella.
+- Cuello de botella real: DISPONIBILIDAD fisica de L4 en us-central1 (intermitente,
+  mejor en horario nocturno). No se resuelve con config. Opciones a futuro:
+  reservation puntual de capacidad, u otra region.
