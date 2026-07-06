@@ -35,7 +35,7 @@ ventas_demo.csv
 _local/
 
 # === Imágenes Docker locales (pesadas) ===
-docker-images/
+# docker-images/
 
 # === Sistema ===
 .DS_Store

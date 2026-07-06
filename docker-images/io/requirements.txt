@@ -1,0 +1,17 @@
+numpy
+pandas
+scipy
+sympy
+matplotlib
+plotly
+pulp
+pyomo
+ortools
+mip
+n+
+ipywidgets
+tabulate
+openpyxl
+xlsxwriter
+nbgitpuller
+jupyterlab-git
