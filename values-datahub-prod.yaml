@@ -411,7 +411,7 @@ hub:
           #    other academic areas.
           # ===================================================================
           def nbgrader_exchange_volume():
-              return [{
+              return {
                   "name": "nbgrader-exchange",
                   "csi": {
                       "driver": "gcsfuse.csi.storage.gke.io",
@@ -420,13 +420,26 @@ hub:
                           "mountOptions": "implicit-dirs"
                       }
                   }
-              }]
+              }
 
           def nbgrader_exchange_mount():
-              return [{
+              return {
                   "name": "nbgrader-exchange",
                   "mountPath": "/srv/nbgrader-exchange"
-              }]
+              }
+          
+          def merge_extra(existing, new_item):
+              """Combina un volumen/mount nuevo con lo que ya tenga el spawner,
+              sin importar si está representado como lista o como dict."""
+              name = new_item["name"]
+              if isinstance(existing, dict):
+                  combined = dict(existing)
+                  combined[name] = new_item
+                  return combined
+              else:
+                  combined = list(existing)
+                  combined.append(new_item)
+                  return combined         
 
           def nbgrader_user_config(course_id, es_instructor):
               base = (
@@ -463,8 +476,8 @@ hub:
                     "mem_limit": "2G",
                     "extra_annotations": {"gke-gcsfuse/volumes": "true"},
                     "environment": {"NBGRADER_COURSE_ID": "procesos_estocasticos"},
-                    "volumes": spawner.volumes + [nbgrader_exchange_volume()],
-                    "volume_mounts": spawner.volume_mounts + [nbgrader_exchange_mount()],
+                    "volumes": merge_extra(spawner.volumes, nbgrader_exchange_volume()),
+                    "volume_mounts": merge_extra(spawner.volume_mounts, nbgrader_exchange_mount()),
                     "lifecycle_hooks": {
                         "postStart": {"exec": {"command": ["/bin/bash", "-c",
                             nbgrader_user_config("procesos_estocasticos", es_instructor_pe)]}}
@@ -482,8 +495,8 @@ hub:
                     "mem_limit": "2G",
                     "extra_annotations": {"gke-gcsfuse/volumes": "true"},
                     "environment": {"NBGRADER_COURSE_ID": "simulacion_empresarial"},
-                    "extra_volumes": nbgrader_exchange_extra_volume(),
-                    "extra_volume_mounts": nbgrader_exchange_extra_mount(),
+                    "volumes": merge_extra(spawner.volumes, nbgrader_exchange_volume()),
+                    "volume_mounts": merge_extra(spawner.volume_mounts, nbgrader_exchange_mount()),
                     "lifecycle_hooks": {
                         "postStart": {"exec": {"command": ["/bin/bash", "-c",
                             nbgrader_user_config("simulacion_empresarial", es_instructor_se)]}}
