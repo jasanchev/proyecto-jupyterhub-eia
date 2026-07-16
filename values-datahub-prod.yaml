@@ -439,7 +439,7 @@ hub:
               )
               if not es_instructor:
                   return base
-              return base + " && " + (
+              return base + "\n" + (
                   "mkdir -p /home/jovyan/.jupyter/labconfig && "
                   "cat > /home/jovyan/.jupyter/labconfig/page_config.json << 'EOF2'\n"
                   '{"disabledExtensions": {"@jupyter/nbgrader:formgrader": false, '
