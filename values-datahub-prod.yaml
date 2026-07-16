@@ -428,19 +428,30 @@ hub:
                   "mountPath": "/srv/nbgrader-exchange"
               }]
 
+          def nbgrader_user_config(course_id, es_instructor):
+              base = (
+                  f"mkdir -p /home/jovyan/.jupyter && "
+                  f"cat > /home/jovyan/.jupyter/nbgrader_config.py << 'EOF'\n"
+                  f"c = get_config()\n"
+                  f"c.CourseDirectory.course_id = '{course_id}'\n"
+                  f"c.Exchange.root = '/srv/nbgrader-exchange'\n"
+                  f"EOF"
+              )
+              if not es_instructor:
+                  return base
+              return base + " && " + (
+                  "mkdir -p /home/jovyan/.jupyter/labconfig && "
+                  "cat > /home/jovyan/.jupyter/labconfig/page_config.json << 'EOF2'\n"
+                  '{"disabledExtensions": {"@jupyter/nbgrader:formgrader": false, '
+                  '"@jupyter/nbgrader:assignment-list": false, '
+                  '"@jupyter/nbgrader:course-list": false, '
+                  '"@jupyter/nbgrader:validate-assignment": false, '
+                  '"@jupyter/nbgrader:create-assignment": false, '
+                  '"@jupyter/nbgrader:menu": false}}\nEOF2'
+              )
+
           es_instructor_pe = user.name.lower() in instructores_pe
           es_instructor_se = user.name.lower() in instructores_se
-
-          REACTIVAR_NBGRADER_CMD = (
-              "mkdir -p /home/jovyan/.jupyter/labconfig && "
-              "cat > /home/jovyan/.jupyter/labconfig/page_config.json << 'EOF'\n"
-              '{"disabledExtensions": {"@jupyter/nbgrader:formgrader": false, '
-              '"@jupyter/nbgrader:assignment-list": false, '
-              '"@jupyter/nbgrader:course-list": false, '
-              '"@jupyter/nbgrader:validate-assignment": false, '
-              '"@jupyter/nbgrader:create-assignment": false, '
-              '"@jupyter/nbgrader:menu": false}}\nEOF'
-          )
 
           if es_instructor_pe or es_estudiante_pe:
             profile_list.append({
@@ -456,7 +467,7 @@ hub:
                     "extra_volume_mounts": nbgrader_exchange_extra_mount(),
                     "lifecycle_hooks": {
                         "postStart": {"exec": {"command": ["/bin/bash", "-c",
-                            "true" if not es_instructor_pe else REACTIVAR_NBGRADER_CMD]}}
+                            nbgrader_user_config("procesos_estocasticos", es_instructor_pe)]}}
                       }
                 }
             })
@@ -475,7 +486,7 @@ hub:
                     "extra_volume_mounts": nbgrader_exchange_extra_mount(),
                     "lifecycle_hooks": {
                         "postStart": {"exec": {"command": ["/bin/bash", "-c",
-                            "true" if not es_instructor_se else REACTIVAR_NBGRADER_CMD]}}
+                            nbgrader_user_config("simulacion_empresarial", es_instructor_se)]}}
                     }
                 }
           })
