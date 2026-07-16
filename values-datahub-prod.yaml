@@ -343,6 +343,10 @@ hub:
           # Load NBGrader instructor lists from ConfigMap (reloadable without Hub restart)
           instructores_pe = load_user_list("instructores_procesos_estocasticos.txt")
           instructores_se = load_user_list("instructores_simulacion_empresarial.txt")
+
+          # Load list of students from ConfigMap (reloadable without Hub restart)
+          estudiantes_pe = load_user_list("estudiantes_procesos_estocasticos.txt")
+          estudiantes_se = load_user_list("estudiantes_simulacion_empresarial.txt")
           
           # ===================================================================
           # PUBLIC PROFILES — visible to any authenticated user
@@ -438,41 +442,43 @@ hub:
               '"@jupyter/nbgrader:menu": false}}\nEOF'
           )
 
-          profile_list.append({
-              "display_name": "📊 Procesos Estocásticos (nbgrader)",
-              "description": "Entorno del curso — " + ("modo instructor" if es_instructor_pe else "modo estudiante"),
-              "kubespawner_override": {
-                  "image": "us-central1-docker.pkg.dev/jupyterhub-eia/jupyterhub-images/eia-simulacion:v3",
-                  "cpu_limit": 1,
-                  "mem_limit": "2G",
-                  "extra_annotations": {"gke-gcsfuse/volumes": "true"},
-                  "environment": {"NBGRADER_COURSE_ID": "procesos_estocasticos"},
-                  "extra_volumes": nbgrader_exchange_extra_volume(),
-                  "extra_volume_mounts": nbgrader_exchange_extra_mount(),
-                  "lifecycle_hooks": {
-                      "postStart": {"exec": {"command": ["/bin/bash", "-c",
-                          "true" if not es_instructor_pe else REACTIVAR_NBGRADER_CMD]}}
-                    }
-              }
-          })
+          if es_instructor_pe or es_estudiante_pe:
+            profile_list.append({
+                "display_name": "📊 Procesos Estocásticos (nbgrader)",
+                "description": "Entorno del curso — " + ("modo instructor" if es_instructor_pe else "modo estudiante"),
+                "kubespawner_override": {
+                    "image": "us-central1-docker.pkg.dev/jupyterhub-eia/jupyterhub-images/eia-simulacion:v3",
+                    "cpu_limit": 1,
+                    "mem_limit": "2G",
+                    "extra_annotations": {"gke-gcsfuse/volumes": "true"},
+                    "environment": {"NBGRADER_COURSE_ID": "procesos_estocasticos"},
+                    "extra_volumes": nbgrader_exchange_extra_volume(),
+                    "extra_volume_mounts": nbgrader_exchange_extra_mount(),
+                    "lifecycle_hooks": {
+                        "postStart": {"exec": {"command": ["/bin/bash", "-c",
+                            "true" if not es_instructor_pe else REACTIVAR_NBGRADER_CMD]}}
+                      }
+                }
+            })
 
-          profile_list.append({
-              "display_name": "🏭 Simulación Empresarial (nbgrader)",
-              "description": "Entorno del curso — " + ("modo instructor" if es_instructor_se else "modo estudiante"),
-              "kubespawner_override": {
-                  "image": "us-central1-docker.pkg.dev/jupyterhub-eia/jupyterhub-images/eia-simulacion:v3",
-                  "cpu_limit": 1,
-                  "mem_limit": "2G",
-                  "extra_annotations": {"gke-gcsfuse/volumes": "true"},
-                  "environment": {"NBGRADER_COURSE_ID": "simulacion_empresarial"},
-                  "extra_volumes": nbgrader_exchange_extra_volume(),
-                  "extra_volume_mounts": nbgrader_exchange_extra_mount(),
-                  "lifecycle_hooks": {
-                      "postStart": {"exec": {"command": ["/bin/bash", "-c",
-                          "true" if not es_instructor_se else REACTIVAR_NBGRADER_CMD]}}
-                  }
-              }
-        })
+          if es_instructor_se or es_estudiante_se:
+            profile_list.append({
+                "display_name": "🏭 Simulación Empresarial (nbgrader)",
+                "description": "Entorno del curso — " + ("modo instructor" if es_instructor_se else "modo estudiante"),
+                "kubespawner_override": {
+                    "image": "us-central1-docker.pkg.dev/jupyterhub-eia/jupyterhub-images/eia-simulacion:v3",
+                    "cpu_limit": 1,
+                    "mem_limit": "2G",
+                    "extra_annotations": {"gke-gcsfuse/volumes": "true"},
+                    "environment": {"NBGRADER_COURSE_ID": "simulacion_empresarial"},
+                    "extra_volumes": nbgrader_exchange_extra_volume(),
+                    "extra_volume_mounts": nbgrader_exchange_extra_mount(),
+                    "lifecycle_hooks": {
+                        "postStart": {"exec": {"command": ["/bin/bash", "-c",
+                            "true" if not es_instructor_se else REACTIVAR_NBGRADER_CMD]}}
+                    }
+                }
+          })
 
           # ===================================================================
           # VIP PROFILE — NVIDIA L4 GPU (authorized users only)
