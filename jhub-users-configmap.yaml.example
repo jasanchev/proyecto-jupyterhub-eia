@@ -93,3 +93,58 @@ data:
     profesor1@example.edu
     profesor2@example.edu
     profesor3@example.edu
+
+# ---------------------------------------------------------------------------
+  #  instructores_procesos_estocasticos.txt
+  # ---------------------------------------------------------------------------
+  #  Instructor(es) autorizados a ver el perfil con nbgrader habilitado
+  #  (formgrader, create_assignment) para el curso Procesos Estocásticos.
+  #
+  #  ⚠️ Estos usuarios también deben estar en allowed_users.txt.
+  #
+  #  ⚠️ Si el archivo está vacío o falta, ningún usuario ve el perfil en
+  #     modo instructor — el perfil de curso queda inaccesible para todos
+  #     hasta que se agregue al menos un instructor.
+  # ---------------------------------------------------------------------------
+  instructores_procesos_estocasticos.txt: |
+    # Instructor(es) del curso
+    profesor1@example.edu
+
+  # ---------------------------------------------------------------------------
+  #  instructores_simulacion_empresarial.txt
+  # ---------------------------------------------------------------------------
+  #  Instructor(es) autorizados a ver el perfil con nbgrader habilitado
+  #  para el curso Simulación Empresarial.
+  #
+  #  ⚠️ Estos usuarios también deben estar en allowed_users.txt.
+  # ---------------------------------------------------------------------------
+  instructores_simulacion_empresarial.txt: |
+    # Instructor(es) del curso
+    profesor1@example.edu
+
+  # ---------------------------------------------------------------------------
+  #  estudiantes_procesos_estocasticos.txt
+  # ---------------------------------------------------------------------------
+  #  Estudiantes matriculados que pueden ver el perfil de Procesos
+  #  Estocásticos con nbgrader. Sin estar aquí (ni ser instructor), el
+  #  perfil ni siquiera aparece en su lista de Server Options.
+  #
+  #  ⚠️ Estos usuarios también deben estar en allowed_users.txt.
+  # ---------------------------------------------------------------------------
+  estudiantes_procesos_estocasticos.txt: |
+    # Curso: Procesos Estocásticos — Semestre [YYYY-N]
+    # estudiante1@example.edu
+    # estudiante2@example.edu
+
+  # ---------------------------------------------------------------------------
+  #  estudiantes_simulacion_empresarial.txt
+  # ---------------------------------------------------------------------------
+  #  Estudiantes matriculados que pueden ver el perfil de Simulación
+  #  Empresarial con nbgrader.
+  #
+  #  ⚠️ Estos usuarios también deben estar en allowed_users.txt.
+  # ---------------------------------------------------------------------------
+  estudiantes_simulacion_empresarial.txt: |
+    # Curso: Simulación Empresarial — Semestre [YYYY-N]
+    # estudiante1@example.edu
+    # estudiante2@example.edu
