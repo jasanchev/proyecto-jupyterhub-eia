@@ -417,7 +417,7 @@ hub:
                       "driver": "gcsfuse.csi.storage.gke.io",
                       "volumeAttributes": {
                           "bucketName": "jhub-eia-nbgrader-exchange",
-                          "mountOptions": "implicit-dirs"
+                          "mountOptions": "implicit-dirs,file-mode=0666,dir-mode=0777"
                       }
                   }
               }
