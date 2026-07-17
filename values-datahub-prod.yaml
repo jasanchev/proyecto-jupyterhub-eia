@@ -450,17 +450,28 @@ hub:
                   f"c.Exchange.root = '/srv/nbgrader-exchange'\n"
                   f"EOF"
               )
-              if not es_instructor:
-                  return base
+              if es_instructor:
+                  plugins_json = (
+                      '{"disabledExtensions": {"@jupyter/nbgrader:formgrader": false, '
+                      '"@jupyter/nbgrader:assignment-list": false, '
+                      '"@jupyter/nbgrader:course-list": false, '
+                      '"@jupyter/nbgrader:validate-assignment": false, '
+                      '"@jupyter/nbgrader:create-assignment": false, '
+                      '"@jupyter/nbgrader:menu": false}}'
+                  )
+              else:
+                  plugins_json = (
+                      '{"disabledExtensions": {"@jupyter/nbgrader:formgrader": true, '
+                      '"@jupyter/nbgrader:assignment-list": false, '
+                      '"@jupyter/nbgrader:course-list": true, '
+                      '"@jupyter/nbgrader:validate-assignment": false, '
+                      '"@jupyter/nbgrader:create-assignment": true, '
+                      '"@jupyter/nbgrader:menu": false}}'
+                  )
               return base + "\n" + (
                   "mkdir -p /home/jovyan/.jupyter/labconfig && "
-                  "cat > /home/jovyan/.jupyter/labconfig/page_config.json << 'EOF2'\n"
-                  '{"disabledExtensions": {"@jupyter/nbgrader:formgrader": false, '
-                  '"@jupyter/nbgrader:assignment-list": false, '
-                  '"@jupyter/nbgrader:course-list": false, '
-                  '"@jupyter/nbgrader:validate-assignment": false, '
-                  '"@jupyter/nbgrader:create-assignment": false, '
-                  '"@jupyter/nbgrader:menu": false}}\nEOF2'
+                  f"cat > /home/jovyan/.jupyter/labconfig/page_config.json << 'EOF2'\n"
+                  f"{plugins_json}\nEOF2"
               )
 
           es_instructor_pe = user.name.lower() in instructores_pe
