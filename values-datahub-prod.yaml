@@ -476,6 +476,9 @@ hub:
 
           es_instructor_pe = user.name.lower() in instructores_pe
           es_instructor_se = user.name.lower() in instructores_se
+          
+          es_estudiante_pe = user.name.lower() in estudiantes_pe
+          es_estudiante_se = user.name.lower() in estudiantes_se
 
           if es_instructor_pe or es_estudiante_pe:
             profile_list.append({
