@@ -485,7 +485,7 @@ hub:
                 "display_name": "📊 Procesos Estocásticos (nbgrader)",
                 "description": "Entorno del curso — " + ("modo instructor" if es_instructor_pe else "modo estudiante"),
                 "kubespawner_override": {
-                    "image": "us-central1-docker.pkg.dev/jupyterhub-eia/jupyterhub-images/eia-simulacion:v3",
+                    "image": "us-central1-docker.pkg.dev/jupyterhub-eia/jupyterhub-images/eia-procesos-estocasticos:v1",
                     "cpu_limit": 1,
                     "mem_limit": "2G",
                     "extra_annotations": {"gke-gcsfuse/volumes": "true"},
